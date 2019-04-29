@@ -8,17 +8,19 @@ local pairs = pairs
 
 
 
-Timing.VERSION = "0.1.0-1"
+Timing.VERSION = "0.1.0-3"
 Timing.PRIORITY = 1006
 
 
-function Timing:new(  )
+function Timing:new()
     Timing.super.new(self, "kong-timechecking")
 end
 
 function doExpiryTiming(conf)
 
-    local exist, errE = isExist(conf.methods, kong.request.get_method())
+    local exit, errE = isExist(conf.methods, kong.request.get_method())
+
+
 
     if errE ~= nil then
         return {}, errE
@@ -26,9 +28,12 @@ function doExpiryTiming(conf)
 
     local parse_body, err = parseBody(conf)
 
+
     if err ~= nil then
-        return {}, err
+        return {}, {status = 500, message = "not valid attribute"}
     end
+
+
 
 
     if not parse_body[conf.attr] then
@@ -38,20 +43,34 @@ function doExpiryTiming(conf)
         }
     end
 
+
+
+
+
     local timeExpiry = parse_body[conf.attr]
 
-    if timeExpiry <= 0 or (os.time() - timeExpiry) > conf.time_expiry then
+    -- return kong.response.exit(200, {
+    --     message = os.time() - timeExpiry,
+    --     ab = conf.time_expiry,
+    --     com = (os.time() - timeExpiry) > conf.time_expiry
+    -- })
+
+    if (os.time() - timeExpiry) > conf.time_expiry == true then
+
+
         return {}, {
             status = 403,
             message = "Access Denied"
         }
     end
 
+
     return {}, nil
 end
 
 function Timing:access(conf)
-    Timing.super.new(self)
+    Timing.super.access(self)
+
 
     if not conf.attr or not conf.methods or not conf.time_expiry then
         return kong.response.exit(500, {
@@ -59,11 +78,12 @@ function Timing:access(conf)
         })
     end
 
+
     local ok, err = doExpiryTiming(conf)
 
 
     if err ~= nil then
-        return kong.respose.exit(err.status, {
+        return kong.response.exit(err.status, {
             message = err.message
         })
     end
@@ -117,3 +137,6 @@ function parseBody(conf)
     end
     return args, nil
 end
+
+
+return Timing
