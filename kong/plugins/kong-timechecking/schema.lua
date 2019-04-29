@@ -6,7 +6,7 @@ return {
         {run_on = typedefs.run_on_first},
         {protocols = typedefs.protocols_http},
         {
-            configs = {
+            config = {
                 type = "record",
                 fields = {
                     {
